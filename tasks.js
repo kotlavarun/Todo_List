@@ -2,6 +2,8 @@ const taskForm = document.querySelector(".taskForm");
 const taskInput = document.querySelector(".taskInput");
 const tasksContainer=document.querySelector(".tasksContainer");
 const sortingArray=document.getElementById("sortBtn");
+const clearCompletedBtn=document.querySelector(".clearComplete");
+
 
 let TODOS=[]
 let completeTODOS=[]
@@ -17,7 +19,16 @@ document.addEventListener("DOMContentLoaded",function(){
     
 })
 
-sortingArray.addEventListener("change",function(){
+
+
+clearCompletedBtn.addEventListener("click",function(){
+    TODOS=TODOS.filter((task)=>task.isTaskDone!=true)
+    localStorage.setItem("todo",JSON.stringify(TODOS));
+    tasksContainer.replaceChildren();
+    renderTodos(TODOS)
+})
+
+sortingArray.addEventListener("click",function(){
     console.log(sortingArray.value);
     if(sortingArray.value=="new"){
 
@@ -36,10 +47,11 @@ sortingArray.addEventListener("change",function(){
     }
     else if(sortingArray.value=="complete"){
         completeTODOS=TODOS.filter((task)=>task.isTaskDone==true)
-        localStorage.setItem("ctodo",JSON.stringify(completeTODOS));
+        //localStorage.setItem("ctodo",JSON.stringify(completeTODOS));
         tasksContainer.replaceChildren();
         renderTodos(completeTODOS)
     }
+    sortingArray.value=""
     
 })
 
@@ -117,6 +129,44 @@ const handleTaskDone=(taskIdToUpdate)=>{
     localStorage.setItem("todo",JSON.stringify(TODOS))
     
 }
+
+const formatDate=(isoString)=>{
+  const date = new Date(isoString);
+  const now = new Date();
+
+  // Get start of today
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  // Get start of yesterday
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+  // Format time
+  const time = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  });
+
+  if (date >= startOfToday) {
+    return `Today, ${time}`;
+  }
+
+  if (date >= startOfYesterday) {
+    return `Yesterday, ${time}`;
+  }
+
+  // Older dates
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric"
+  }) + `, ${time}`;
+}
+
 const createAndPush=(task)=>{
     const newListItem=document.createElement("li");
 
@@ -143,7 +193,7 @@ const createAndPush=(task)=>{
     }
 
     const timeStampPtag=document.createElement("p");
-    timeStampPtag.textContent=task.timeStamp;
+    timeStampPtag.textContent=formatDate(task.timeStamp);
 
     tasksContentContainer.appendChild(pTag)
     tasksContentContainer.appendChild(timeStampPtag)
