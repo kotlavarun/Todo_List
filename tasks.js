@@ -14,11 +14,23 @@ document.addEventListener("DOMContentLoaded",function(){
     const areTodosLoaded=loadTodos()
     if(areTodosLoaded){
         renderTodos(TODOS)
+        updateTaskCount(TODOS)
     }
     
     
 })
 
+function updateTaskCount(tasks) {
+    const total = tasks.length;
+    const completed = tasks.filter(task => task.isTaskDone).length;
+    const btag=document.querySelector(".totaltasks")
+    const b2tag=document.querySelector(".completeTask")
+  
+    console.log(btag)
+
+    btag.textContent=total;
+    b2tag.textContent=completed;
+}
 
 
 clearCompletedBtn.addEventListener("click",function(){
@@ -26,6 +38,7 @@ clearCompletedBtn.addEventListener("click",function(){
     localStorage.setItem("todo",JSON.stringify(TODOS));
     tasksContainer.replaceChildren();
     renderTodos(TODOS)
+    updateTaskCount(TODOS)
 })
 
 sortingArray.addEventListener("click",function(){
@@ -86,6 +99,7 @@ const handleEditbutton=(taskIdToEdit)=>{
             if(TODOS[index].taskId==taskIdToEdit){   
                 TODOS[index].taskText=editValue;
                 TODOS[index].timeStamp=new Date().toISOString();
+                //formatDate(TODOS[index].timeStamp)
             }
         }
         localStorage.setItem("todo",JSON.stringify(TODOS));
@@ -107,7 +121,9 @@ const handleDeleteButton=(taskIdtoDelete)=>{
         localStorage.setItem("todo",JSON.stringify(TODOS));
         const listItemToBeRemoved=document.getElementById(taskIdtoDelete);
         listItemToBeRemoved.remove();
+        updateTaskCount(TODOS)
     }
+
 
 }
 
@@ -127,6 +143,7 @@ const handleTaskDone=(taskIdToUpdate)=>{
         
     }
     localStorage.setItem("todo",JSON.stringify(TODOS))
+    updateTaskCount(TODOS)
     
 }
 
@@ -281,6 +298,7 @@ const AddTask=(event)=>{
     
     TODOS.push(newTask);
     saveTOdoINLocalStorage(TODOS);
+    updateTaskCount(TODOS)
     
     taskInput.value=""
 }
