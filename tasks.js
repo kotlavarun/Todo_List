@@ -1,72 +1,122 @@
-const taskForm = document.querySelector(".taskForm");
-const taskInput = document.querySelector(".taskInput");
-const tasksContainer=document.querySelector(".tasksContainer");
-const sortingArray=document.getElementById("sortBtn");
-const clearCompletedBtn=document.querySelector(".clearComplete");
+
+// document.addEventListener("DOMContentLoaded",init);
+
+const init=()=>{
+    const taskForm = document.querySelector(".taskForm");
+    const taskInput = document.querySelector(".taskInput");
+    const tasksContainer=document.querySelector(".tasksContainer");
+    const sortingArray=document.getElementById("sortBtn");
+    const clearCompletedBtn=document.querySelector(".clearComplete");
 
 
-let TODOS=[]
-let completeTODOS=[]
+    let TODOS=[]
+    let completeTODOS=[]
 
-
-document.addEventListener("DOMContentLoaded",function(){
-    
-    const areTodosLoaded=loadTodos()
-    if(areTodosLoaded){
-        renderTodos(TODOS)
-        updateTaskCount(TODOS)
+    const loadTodos=()=>{
+        console.log(TODOS)
+        const stringifiedTodos=localStorage.getItem("todo");
+        const todosArray=JSON.parse(stringifiedTodos);
+        if(todosArray && todosArray.length){
+            // TODOS.push(...todosArray);
+            TODOS=todosArray;
+            console.log(TODOS)
+            return true;
+        }
+        return false;
     }
-    
-    
-})
 
-function updateTaskCount(tasks) {
-    const total = tasks.length;
-    const completed = tasks.filter(task => task.isTaskDone).length;
-    const btag=document.querySelector(".totaltasks")
-    const b2tag=document.querySelector(".completeTask")
-  
-    console.log(btag)
+    const formatDate=(isoString)=>{
+        const date = new Date(isoString);
+        const now = new Date();
 
-    btag.textContent=total;
-    b2tag.textContent=completed;
-}
+        // Get start of today
+        const startOfToday = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate()
+        );
 
+        // Get start of yesterday
+        const startOfYesterday = new Date(startOfToday);
+        startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
-clearCompletedBtn.addEventListener("click",function(){
-    TODOS=TODOS.filter((task)=>task.isTaskDone!=true)
-    localStorage.setItem("todo",JSON.stringify(TODOS));
-    tasksContainer.replaceChildren();
-    renderTodos(TODOS)
-    updateTaskCount(TODOS)
-})
+        // Format time
+        const time = date.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true
+        });
 
-sortingArray.addEventListener("click",function(){
-    console.log(sortingArray.value);
-    if(sortingArray.value=="new"){
+        if (date >= startOfToday) {
+            return `Today, ${time}`;
+        }
 
-        TODOS=TODOS.sort((a, b) => a.timeStamp.localeCompare(b.timeStamp));
-        localStorage.setItem("todo",JSON.stringify(TODOS));
-        tasksContainer.replaceChildren(); // modern & clean
-    
-        renderTodos(TODOS)
+        if (date >= startOfYesterday) {
+            return `Yesterday, ${time}`;
+        }
+
+        // Older dates
+        return date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric"
+        }) + `, ${time}`;
     }
-    else if(sortingArray.value=="old"){
-        TODOS=TODOS.sort((a, b) => b.timeStamp.localeCompare(a.timeStamp));
-        localStorage.setItem("todo",JSON.stringify(TODOS));
-        tasksContainer.replaceChildren(); // modern & clean
-    
-        renderTodos(TODOS)
+
+    const createAndPush=(task)=>{
+        const newListItem=document.createElement("li");
+
+        newListItem.setAttribute("class","taskItem");
+        newListItem.setAttribute("id",task.taskId)
+
+        const checkBoxInput = document.createElement("input");
+        checkBoxInput.setAttribute("type","checkbox");
+        checkBoxInput.checked=task.isTaskDone;
+
+        checkBoxInput.addEventListener("change",()=>handleTaskDone(task.taskId))
+
+        const tasksContentContainer=document.createElement("div");
+
+        const pTag=document.createElement("p");
+        pTag.setAttribute("class","task");
+        pTag.textContent=task.taskText;
+
+        if(task.isTaskDone){
+            pTag.classList.add("striker")
+        }
+        else{
+            pTag.classList.remove("striker")
+        }
+
+        const timeStampPtag=document.createElement("p");
+        timeStampPtag.textContent=formatDate(task.timeStamp);
+
+        tasksContentContainer.appendChild(pTag)
+        tasksContentContainer.appendChild(timeStampPtag)
+
+        const taskActionButtonContainer = document.createElement("div");
+        taskActionButtonContainer.setAttribute("class","tasksAction")
+
+        const editButton=document.createElement("button");
+        editButton.setAttribute("class","taskEdit");
+        editButton.textContent="Edit"
+        editButton.addEventListener("click",()=>handleEditbutton(task.taskId));
+
+        const deleteButton = document.createElement("button");
+        deleteButton.setAttribute("class","taskDelete")
+        deleteButton.textContent="Delete"
+        deleteButton.addEventListener("click",()=>handleDeleteButton(task.taskId));
+
+        taskActionButtonContainer.appendChild(editButton);
+        taskActionButtonContainer.appendChild(deleteButton);
+
+        newListItem.appendChild(checkBoxInput);
+        newListItem.appendChild(tasksContentContainer);
+        newListItem.appendChild(taskActionButtonContainer)
+
+        tasksContainer.prepend(newListItem);
+   
     }
-    else if(sortingArray.value=="complete"){
-        completeTODOS=TODOS.filter((task)=>task.isTaskDone==true)
-        //localStorage.setItem("ctodo",JSON.stringify(completeTODOS));
-        tasksContainer.replaceChildren();
-        renderTodos(completeTODOS)
-    }
-    sortingArray.value=""
-    
-})
+
 
 const handleEditbutton=(taskIdToEdit)=>{
 
@@ -110,22 +160,22 @@ const handleEditbutton=(taskIdToEdit)=>{
 
 
 }
-const handleDeleteButton=(taskIdtoDelete)=>{
+    const handleDeleteButton=(taskIdtoDelete)=>{
     
-    console.log("Delete Button pressed")
-    console.log(taskIdtoDelete)
-    const userconfirm=confirm("Are you sure want to delete");
-    if(userconfirm){
+        console.log("Delete Button pressed")
+        console.log(taskIdtoDelete)
+        const userconfirm=confirm("Are you sure want to delete");
+        if(userconfirm){
 
-        TODOS=TODOS.filter((task)=>task.taskId!=taskIdtoDelete)
-        localStorage.setItem("todo",JSON.stringify(TODOS));
-        const listItemToBeRemoved=document.getElementById(taskIdtoDelete);
-        listItemToBeRemoved.remove();
-        updateTaskCount(TODOS)
+            TODOS=TODOS.filter((task)=>task.taskId!=taskIdtoDelete)
+            localStorage.setItem("todo",JSON.stringify(TODOS));
+            const listItemToBeRemoved=document.getElementById(taskIdtoDelete);
+            listItemToBeRemoved.remove();
+            updateTaskCount(TODOS)
+        }
+
+
     }
-
-
-}
 
 const handleTaskDone=(taskIdToUpdate)=>{
     const listItemtoBeEdit=document.getElementById(taskIdToUpdate);
@@ -147,103 +197,9 @@ const handleTaskDone=(taskIdToUpdate)=>{
     
 }
 
-const formatDate=(isoString)=>{
-  const date = new Date(isoString);
-  const now = new Date();
-
-  // Get start of today
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  );
-
-  // Get start of yesterday
-  const startOfYesterday = new Date(startOfToday);
-  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
-
-  // Format time
-  const time = date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true
-  });
-
-  if (date >= startOfToday) {
-    return `Today, ${time}`;
-  }
-
-  if (date >= startOfYesterday) {
-    return `Yesterday, ${time}`;
-  }
-
-  // Older dates
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric"
-  }) + `, ${time}`;
-}
-
-const createAndPush=(task)=>{
-    const newListItem=document.createElement("li");
-
-    newListItem.setAttribute("class","taskItem");
-    newListItem.setAttribute("id",task.taskId)
-
-    const checkBoxInput = document.createElement("input");
-    checkBoxInput.setAttribute("type","checkbox");
-    checkBoxInput.checked=task.isTaskDone;
-
-    checkBoxInput.addEventListener("change",()=>handleTaskDone(task.taskId))
-
-    const tasksContentContainer=document.createElement("div");
-
-    const pTag=document.createElement("p");
-    pTag.setAttribute("class","task");
-    pTag.textContent=task.taskText;
-
-    if(task.isTaskDone){
-        pTag.classList.add("striker")
-    }
-    else{
-        pTag.classList.remove("striker")
-    }
-
-    const timeStampPtag=document.createElement("p");
-    timeStampPtag.textContent=formatDate(task.timeStamp);
-
-    tasksContentContainer.appendChild(pTag)
-    tasksContentContainer.appendChild(timeStampPtag)
-
-    const taskActionButtonContainer = document.createElement("div");
-    taskActionButtonContainer.setAttribute("class","tasksAction")
-
-    const editButton=document.createElement("button");
-    editButton.setAttribute("class","taskEdit");
-    editButton.textContent="Edit"
-    editButton.addEventListener("click",()=>handleEditbutton(task.taskId));
-
-    const deleteButton = document.createElement("button");
-    deleteButton.setAttribute("class","taskDelete")
-    deleteButton.textContent="Delete"
-    deleteButton.addEventListener("click",()=>handleDeleteButton(task.taskId));
-
-    taskActionButtonContainer.appendChild(editButton);
-    taskActionButtonContainer.appendChild(deleteButton);
-
-    newListItem.appendChild(checkBoxInput);
-    newListItem.appendChild(tasksContentContainer);
-    newListItem.appendChild(taskActionButtonContainer)
-
-    tasksContainer.prepend(newListItem);
-   
-}
 
 
-
-
-
-const renderTodos=(todos)=>{
+    const renderTodos=(todos)=>{
     for(let index=0;index<todos.length;index++){
         
         
@@ -251,57 +207,101 @@ const renderTodos=(todos)=>{
         
 
         
+        }
     }
-}
 
+    const updateTaskCount=(tasks)=>{
+        const total = tasks.length;
+        const completed = tasks.filter(task => task.isTaskDone).length;
+        const btag=document.querySelector(".totaltasks")
+        const b2tag=document.querySelector(".completeTask")
+    
+        console.log(btag)
 
-const loadTodos=()=>{
-    console.log(TODOS)
-    const stringifiedTodos=localStorage.getItem("todo");
-    const todosArray=JSON.parse(stringifiedTodos);
-    if(todosArray && todosArray.length){
-        // TODOS.push(...todosArray);
-        TODOS=todosArray;
-        console.log(TODOS)
-        return true;
+        btag.textContent=total;
+        b2tag.textContent=completed;
     }
-    return false;
-}
 
-const saveTOdoINLocalStorage=(todos)=>{
-    const stringifiedTodos=JSON.stringify(todos);
-    console.log(localStorage)
-    localStorage.setItem("todo",stringifiedTodos);
-    return;
-}
+    const areTodosLoaded=loadTodos()
+    if(areTodosLoaded){
+        renderTodos(TODOS)
+        updateTaskCount(TODOS)
+    }
 
-const AddTask=(event)=>{
-    event.preventDefault();
-    console.log("clicked")
 
-    if(!taskInput.value.trim()){
-        alert("Please enter something");
+    clearCompletedBtn.addEventListener("click",function(){
+        TODOS=TODOS.filter((task)=>task.isTaskDone!=true)
+        localStorage.setItem("todo",JSON.stringify(TODOS));
+        tasksContainer.replaceChildren();
+        renderTodos(TODOS)
+        updateTaskCount(TODOS)
+    })
+
+    sortingArray.addEventListener("click",function(){
+        console.log(sortingArray.value);
+        if(sortingArray.value=="new"){
+
+            TODOS=TODOS.sort((a, b) => a.timeStamp.localeCompare(b.timeStamp));
+            localStorage.setItem("todo",JSON.stringify(TODOS));
+            tasksContainer.replaceChildren(); // modern & clean
+        
+            renderTodos(TODOS)
+        }
+        else if(sortingArray.value=="old"){
+            TODOS=TODOS.sort((a, b) => b.timeStamp.localeCompare(a.timeStamp));
+            localStorage.setItem("todo",JSON.stringify(TODOS));
+            tasksContainer.replaceChildren(); // modern & clean
+        
+            renderTodos(TODOS)
+        }
+        else if(sortingArray.value=="complete"){
+            completeTODOS=TODOS.filter((task)=>task.isTaskDone==true)
+            //localStorage.setItem("ctodo",JSON.stringify(completeTODOS));
+            tasksContainer.replaceChildren();
+            renderTodos(completeTODOS)
+        }
+        sortingArray.value=""
+    
+    })
+
+    const saveTOdoINLocalStorage=(todos)=>{
+        const stringifiedTodos=JSON.stringify(todos);
+        console.log(localStorage)
+        localStorage.setItem("todo",stringifiedTodos);
         return;
     }
 
-    const newTask={
-        taskId:Date.now(),
-        taskText:taskInput.value.trim(),
-        isTaskDone:false,
-        timeStamp:new Date().toISOString()
+    const AddTask=(event)=>{
+        event.preventDefault();
+        console.log("clicked")
 
+        if(!taskInput.value.trim()){
+            alert("Please enter something");
+            return;
+        }
+
+        const newTask={
+            taskId:Date.now(),
+            taskText:taskInput.value.trim(),
+            isTaskDone:false,
+            timeStamp:new Date().toISOString()
+
+        }
+
+
+        createAndPush(newTask);
+
+        
+        TODOS.push(newTask);
+        saveTOdoINLocalStorage(TODOS);
+        updateTaskCount(TODOS)
+        
+        taskInput.value=""
     }
 
+    taskForm.addEventListener("submit",AddTask)
 
-    createAndPush(newTask);
-
-    
-    TODOS.push(newTask);
-    saveTOdoINLocalStorage(TODOS);
-    updateTaskCount(TODOS)
-    
-    taskInput.value=""
 }
 
-taskForm.addEventListener("submit",AddTask)
 
+document.addEventListener("DOMContentLoaded",init);
