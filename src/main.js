@@ -1,7 +1,14 @@
+import {Client,ID,TablesDB} from "appwrite";
 
-// document.addEventListener("DOMContentLoaded",init);
 
 const init=()=>{
+
+    const client = new Client()
+    .setEndpoint('https://sgp.cloud.appwrite.io/v1') // Your API Endpoint
+    .setProject('695cd69c0014850cb2e7'); // Your project ID
+
+    const tablesDB = new TablesDB(client);
+
     const taskForm = document.querySelector(".taskForm");
     const taskInput = document.querySelector(".taskInput");
     const tasksContainer=document.querySelector(".tasksContainer");
@@ -271,7 +278,7 @@ const handleTaskDone=(taskIdToUpdate)=>{
         return;
     }
 
-    const AddTask=(event)=>{
+    const AddTask=async (event)=>{
         event.preventDefault();
         console.log("clicked")
 
@@ -293,7 +300,18 @@ const handleTaskDone=(taskIdToUpdate)=>{
 
         
         TODOS.push(newTask);
-        saveTOdoINLocalStorage(TODOS);
+        // saveTOdoINLocalStorage(TODOS);
+
+        const result = await tablesDB.createRow({
+            databaseId: '695e2f7c002dad78e962',
+            tableId: 'todo-table',
+            rowId: ID.unique(),
+            data: {
+                "tasktext": newTask.taskText
+            }
+        });
+
+        console.log(result);
         updateTaskCount(TODOS)
         
         taskInput.value=""
