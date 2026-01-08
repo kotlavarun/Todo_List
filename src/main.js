@@ -73,7 +73,7 @@ const init=()=>{
         const newListItem=document.createElement("li");
 
         newListItem.setAttribute("class","taskItem");
-        newListItem.setAttribute("id",task.taskId)
+        newListItem.setAttribute("id",task.$id)
 
         const checkBoxInput = document.createElement("input");
         checkBoxInput.setAttribute("type","checkbox");
@@ -85,7 +85,7 @@ const init=()=>{
 
         const pTag=document.createElement("p");
         pTag.setAttribute("class","task");
-        pTag.textContent=task.taskText;
+        pTag.textContent=task.tasktext;
 
         if(task.isTaskDone){
             pTag.classList.add("striker")
@@ -95,7 +95,7 @@ const init=()=>{
         }
 
         const timeStampPtag=document.createElement("p");
-        timeStampPtag.textContent=formatDate(task.timeStamp);
+        timeStampPtag.textContent=formatDate(task.$updatedAt);
 
         tasksContentContainer.appendChild(pTag)
         tasksContentContainer.appendChild(timeStampPtag)
@@ -106,12 +106,12 @@ const init=()=>{
         const editButton=document.createElement("button");
         editButton.setAttribute("class","taskEdit");
         editButton.textContent="Edit"
-        editButton.addEventListener("click",()=>handleEditbutton(task.taskId));
+        editButton.addEventListener("click",()=>handleEditbutton(task.$id));
 
         const deleteButton = document.createElement("button");
         deleteButton.setAttribute("class","taskDelete")
         deleteButton.textContent="Delete"
-        deleteButton.addEventListener("click",()=>handleDeleteButton(task.taskId));
+        deleteButton.addEventListener("click",()=>handleDeleteButton(task.$id));
 
         taskActionButtonContainer.appendChild(editButton);
         taskActionButtonContainer.appendChild(deleteButton);
@@ -136,12 +136,7 @@ const handleEditbutton=(taskIdToEdit)=>{
     const listItemtoBeEdit=document.getElementById(taskIdToEdit);
     const paraTobeEdited =listItemtoBeEdit.querySelector(".task")
     const tasksAction=listItemtoBeEdit.querySelector(".tasksAction")
-    //console.log(tasksAction)
-    //const edit_btn=listItemtoBeEdit.querySelector(".taskEdit")
-    //edit_btn.textContent="Save"
-    //console.log(edit_btn)
-    //console.log(paraTobeEdited)
-    //paraTobeEdited.style.backgroundColor = 'white';
+    
     paraTobeEdited.setAttribute("contenteditable","true");
     paraTobeEdited.classList.add("white_bg");
     const savebtn=document.createElement("button");
@@ -149,17 +144,26 @@ const handleEditbutton=(taskIdToEdit)=>{
     savebtn.setAttribute("class","taskSave");
     tasksAction.prepend(savebtn);
     paraTobeEdited.focus()
-    savebtn.addEventListener("click",function(){
+    savebtn.addEventListener("click",async function(){
         const editValue=paraTobeEdited.textContent;
-        console.log(editValue)
-        for(let index=0;index<TODOS.length;index++){
-            if(TODOS[index].taskId==taskIdToEdit){   
-                TODOS[index].taskText=editValue;
-                TODOS[index].timeStamp=new Date().toISOString();
-                //formatDate(TODOS[index].timeStamp)
-            }
-        }
-        localStorage.setItem("todo",JSON.stringify(TODOS));
+        // console.log(editValue)
+        // for(let index=0;index<TODOS.length;index++){
+        //     if(TODOS[index].taskId==taskIdToEdit){   
+        //         TODOS[index].taskText=editValue;
+        //         TODOS[index].timeStamp=new Date().toISOString();
+        //         //formatDate(TODOS[index].timeStamp)
+        //     }
+        // }
+        // localStorage.setItem("todo",JSON.stringify(TODOS));
+
+        const result = await tablesDB.updateRow({
+            databaseId: '695e2f7c002dad78e962',
+            tableId: 'todo-table',
+            rowId: taskIdToEdit,
+            data: {"tasktext":editValue}, // optional
+        });
+
+        console.log(result);
         paraTobeEdited.setAttribute("contenteditable","false");
         paraTobeEdited.classList.remove("white_bg");
         savebtn.remove();
@@ -167,16 +171,21 @@ const handleEditbutton=(taskIdToEdit)=>{
 
 
 }
-    const handleDeleteButton=(taskIdtoDelete)=>{
+    const handleDeleteButton=async(taskIdtoDelete)=>{
     
         console.log("Delete Button pressed")
         console.log(taskIdtoDelete)
         const userconfirm=confirm("Are you sure want to delete");
         if(userconfirm){
 
-            TODOS=TODOS.filter((task)=>task.taskId!=taskIdtoDelete)
-            localStorage.setItem("todo",JSON.stringify(TODOS));
+            // TODOS=TODOS.filter((task)=>task.taskId!=taskIdtoDelete)
+            // localStorage.setItem("todo",JSON.stringify(TODOS));
             const listItemToBeRemoved=document.getElementById(taskIdtoDelete);
+            const result = await tablesDB.deleteRow({
+                databaseId: '695e2f7c002dad78e962',
+                tableId: 'todo-table',
+                rowId: taskIdtoDelete
+            });
             listItemToBeRemoved.remove();
             updateTaskCount(TODOS)
         }
@@ -296,7 +305,7 @@ const handleTaskDone=(taskIdToUpdate)=>{
         }
 
 
-        createAndPush(newTask);
+        // createAndPush(newTask);
 
         
         TODOS.push(newTask);
@@ -312,6 +321,7 @@ const handleTaskDone=(taskIdToUpdate)=>{
         });
 
         console.log(result);
+        createAndPush(result);
         updateTaskCount(TODOS)
         
         taskInput.value=""
