@@ -79,7 +79,7 @@ const init=()=>{
         checkBoxInput.setAttribute("type","checkbox");
         checkBoxInput.checked=task.isTaskDone;
 
-        checkBoxInput.addEventListener("change",()=>handleTaskDone(task.taskId))
+        checkBoxInput.addEventListener("change",()=>handleTaskDone(task.$id))
 
         const tasksContentContainer=document.createElement("div");
 
@@ -193,24 +193,45 @@ const handleEditbutton=(taskIdToEdit)=>{
 
     }
 
-const handleTaskDone=(taskIdToUpdate)=>{
+const handleTaskDone=async (taskIdToUpdate)=>{
     const listItemtoBeEdit=document.getElementById(taskIdToUpdate);
     const paraTobeEdited =listItemtoBeEdit.querySelector(".task")
-    for(let index=0;index<TODOS.length;index++){
-        if(TODOS[index].taskId==taskIdToUpdate){
-            TODOS[index].isTaskDone=!TODOS[index].isTaskDone
-            if(TODOS[index].isTaskDone){
-                paraTobeEdited.classList.toggle("striker")
-            }
-            else{
-                paraTobeEdited.classList.toggle("striker")
-            }
-        }
+    // for(let index=0;index<TODOS.length;index++){
+    //     if(TODOS[index].taskId==taskIdToUpdate){
+    //         TODOS[index].isTaskDone=!TODOS[index].isTaskDone
+    //         if(TODOS[index].isTaskDone){
+    //             paraTobeEdited.classList.toggle("striker")
+    //         }
+    //         else{
+    //             paraTobeEdited.classList.toggle("striker")
+    //         }
+    //     }
         
-    }
-    localStorage.setItem("todo",JSON.stringify(TODOS))
-    updateTaskCount(TODOS)
+    // }
+    // localStorage.setItem("todo",JSON.stringify(TODOS))
+    // updateTaskCount(TODOS)
+    const rowToUpdate = await tablesDB.getRow({
+            databaseId: '695e2f7c002dad78e962',
+            tableId: 'todo-table',
+            rowId: taskIdToUpdate,
+        });
+
+    console.log(rowToUpdate)
+
+    const result = await tablesDB.updateRow({
+            databaseId: '695e2f7c002dad78e962',
+            tableId: 'todo-table',
+            rowId: taskIdToUpdate,
+            data: {"isTaskDone":!(rowToUpdate.isTaskDone)}, // optional
+        });
     
+    console.log(result)
+
+    if(result.isTaskDone){
+        paraTobeEdited.classList.toggle("striker")
+    }else{
+        paraTobeEdited.classList.toggle("striker")
+    }
 }
 
 
