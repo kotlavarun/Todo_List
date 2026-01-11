@@ -1,7 +1,7 @@
 import {Client,ID,TablesDB} from "appwrite";
 
 
-const init=()=>{
+const init=async()=>{
 
     const client = new Client()
     .setEndpoint('https://sgp.cloud.appwrite.io/v1') // Your API Endpoint
@@ -19,17 +19,34 @@ const init=()=>{
     let TODOS=[]
     let completeTODOS=[]
 
-    const loadTodos=()=>{
+    const loadTodos=async()=>{
         console.log(TODOS)
-        const stringifiedTodos=localStorage.getItem("todo");
-        const todosArray=JSON.parse(stringifiedTodos);
-        if(todosArray && todosArray.length){
+        // const stringifiedTodos=localStorage.getItem("todo");
+        // const todosArray=JSON.parse(stringifiedTodos);
+        // if(todosArray && todosArray.length){
+        //     // TODOS.push(...todosArray);
+        //     TODOS=todosArray;
+        //     console.log(TODOS)
+        //     return true;
+        // }
+        // return false;
+        const result = await tablesDB.listRows({
+            databaseId: '695e2f7c002dad78e962',
+            tableId: 'todo-table',
+        });
+        // console.log(result);
+
+        // console.log(result.rows.length);
+        // TODOS=result.rows;
+        // console.log(TODOS.length);
+        if(result.rows && result.rows.length){
             // TODOS.push(...todosArray);
-            TODOS=todosArray;
+            TODOS=result.rows;
             console.log(TODOS)
             return true;
         }
         return false;
+
     }
 
     const formatDate=(isoString)=>{
@@ -178,7 +195,7 @@ const handleEditbutton=(taskIdToEdit)=>{
         const userconfirm=confirm("Are you sure want to delete");
         if(userconfirm){
 
-            // TODOS=TODOS.filter((task)=>task.taskId!=taskIdtoDelete)
+            TODOS=TODOS.filter((task)=>task.taskId!=taskIdtoDelete)
             // localStorage.setItem("todo",JSON.stringify(TODOS));
             const listItemToBeRemoved=document.getElementById(taskIdtoDelete);
             const result = await tablesDB.deleteRow({
@@ -196,42 +213,54 @@ const handleEditbutton=(taskIdToEdit)=>{
 const handleTaskDone=async (taskIdToUpdate)=>{
     const listItemtoBeEdit=document.getElementById(taskIdToUpdate);
     const paraTobeEdited =listItemtoBeEdit.querySelector(".task")
-    // for(let index=0;index<TODOS.length;index++){
-    //     if(TODOS[index].taskId==taskIdToUpdate){
-    //         TODOS[index].isTaskDone=!TODOS[index].isTaskDone
-    //         if(TODOS[index].isTaskDone){
-    //             paraTobeEdited.classList.toggle("striker")
-    //         }
-    //         else{
-    //             paraTobeEdited.classList.toggle("striker")
-    //         }
-    //     }
+
+    for(let index=0;index<TODOS.length;index++){
+        if(TODOS[index].$id==taskIdToUpdate){
+            TODOS[index].isTaskDone=!TODOS[index].isTaskDone
+            if(TODOS[index].isTaskDone){
+                paraTobeEdited.classList.toggle("striker")
+            }
+            else{
+                paraTobeEdited.classList.toggle("striker")
+            }
+            const result = await tablesDB.updateRow({
+                databaseId: '695e2f7c002dad78e962',
+                tableId: 'todo-table',
+                rowId: taskIdToUpdate,
+                data: {"isTaskDone":TODOS[index].isTaskDone}, // optional
+            });
+
+        }
         
-    // }
+    }
+
     // localStorage.setItem("todo",JSON.stringify(TODOS))
     // updateTaskCount(TODOS)
-    const rowToUpdate = await tablesDB.getRow({
-            databaseId: '695e2f7c002dad78e962',
-            tableId: 'todo-table',
-            rowId: taskIdToUpdate,
-        });
 
-    console.log(rowToUpdate)
+    // const rowToUpdate = await tablesDB.getRow({
+    //         databaseId: '695e2f7c002dad78e962',
+    //         tableId: 'todo-table',
+    //         rowId: taskIdToUpdate,
+    //     });
 
-    const result = await tablesDB.updateRow({
-            databaseId: '695e2f7c002dad78e962',
-            tableId: 'todo-table',
-            rowId: taskIdToUpdate,
-            data: {"isTaskDone":!(rowToUpdate.isTaskDone)}, // optional
-        });
+    // console.log(rowToUpdate)
+
+    // const result = await tablesDB.updateRow({
+    //         databaseId: '695e2f7c002dad78e962',
+    //         tableId: 'todo-table',
+    //         rowId: taskIdToUpdate,
+    //         data: {"isTaskDone":!(rowToUpdate.isTaskDone)}, // optional
+    //     });
     
-    console.log(result)
+    // console.log(result)
 
-    if(result.isTaskDone){
-        paraTobeEdited.classList.toggle("striker")
-    }else{
-        paraTobeEdited.classList.toggle("striker")
-    }
+    // if(result.isTaskDone){
+    //     paraTobeEdited.classList.toggle("striker")
+    // }else{
+    //     paraTobeEdited.classList.toggle("striker")
+    // }
+
+    updateTaskCount(TODOS)
 }
 
 
@@ -259,8 +288,10 @@ const handleTaskDone=async (taskIdToUpdate)=>{
         b2tag.textContent=completed;
     }
 
-    const areTodosLoaded=loadTodos()
+    const areTodosLoaded=await loadTodos()
+    console.log(areTodosLoaded);
     if(areTodosLoaded){
+        console.log(TODOS)
         renderTodos(TODOS)
         updateTaskCount(TODOS)
     }
